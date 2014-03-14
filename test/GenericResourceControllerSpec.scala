@@ -9,9 +9,9 @@ import storage.mock.MockGraphAccess
 import testhelper.{WithSingleFakeApp, HttpClient}
 
 @RunWith(classOf[JUnitRunner])
-class GenericResourceSpec extends Specification with WithSingleFakeApp with HttpClient {
+class GenericResourceControllerSpec extends Specification with WithSingleFakeApp with HttpClient {
 
-  "GenericResource" should {
+  "GenericResourceController" should {
 
     "find existing resources" in {
 
