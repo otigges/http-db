@@ -8,6 +8,7 @@ import model.structure.Document
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import scala.collection
+import java.awt.font.TextAttribute
 
 object GenericResourceController extends Controller {
 
@@ -33,18 +34,11 @@ object GenericResourceController extends Controller {
       val jsonBody: Option[JsValue] = request.body.asJson
       jsonBody.map{
         body =>
-         val resource = parseGenericResource(uid, body.as[JsObject])
+         val resource = GenericResource.fromJson(uid, body.as[JsObject])
          MockGraphAccess.store(resource)
          Logger.info(s"Stored resource ${resource.qn()}")
          NoContent
       }.getOrElse(BadRequest("No valid JSON body."))
-  }
-
-  // ------------------------------------------------------
-
-  private def parseGenericResource(uid: String, json: JsObject) : GenericResource = {
-    val attributes: collection.Map[String, AnyRef] = json.value.mapValues[AnyRef](jsVal => jsVal.toString()).filterKeys(k => "uid".equals(k) )
-    new GenericResource(QualifiedName.read(uid), attributes.toMap)
   }
 
 }
