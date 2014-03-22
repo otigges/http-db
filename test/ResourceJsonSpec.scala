@@ -18,7 +18,7 @@ class ResourceJsonSpec extends Specification with JsonMatchers {
     "be rendered as JSON" in {
 
       val uid = UID()
-      val json = Json.toJson(new GenericResource(uid, Seq(
+      val json = Resource.toJson("", new GenericResource(uid, Seq(
         new TextAttribute("name", "n1"),
         new TextAttribute("name2", "n2"),
         new NumberAttribute("age", 42),

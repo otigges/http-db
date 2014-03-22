@@ -3,7 +3,7 @@ package storage.neo4j
 /**
  *
  */
-class GraphAccess {
+class Neo4jGraphAccess {
 
 
 

@@ -3,7 +3,7 @@
 # ~~~~
 
 # Home page
-GET        /                                  controllers.Application.index
+GET        /                                  controllers.HomeController.index
 
 GET        /resources/:uid                    controllers.GenericResourceController.getGeneric(uid: String)
 GET        /resources/:uid/links              controllers.GenericResourceController.getLinksGeneric(uid: String)
@@ -14,7 +14,11 @@ GET        /entities/:rtype/:uid/links        controllers.GenericResourceControl
 GET        /schemas                           controllers.SchemaController.index()
 GET        /schemas/:uid                      controllers.SchemaController.get(uid: String)
 
+POST       /schemas                           controllers.SchemaController.post()
+PUT        /schemas/:uid                      controllers.SchemaController.put(uid: String)
+
 PUT        /resources/:uid                    controllers.GenericResourceController.putGeneric(uid: String)
+POST       /resources/:uid/links              controllers.GenericResourceController.postLinksGeneric(uid: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET        /assets/*file                      controllers.Assets.at(path="/public", file)

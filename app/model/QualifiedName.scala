@@ -1,6 +1,7 @@
 package model
 
 import java.util.UUID
+import play.api.libs.json.{JsString, JsValue, Writes}
 
 trait QualifiedName {
 
@@ -25,6 +26,13 @@ object QualifiedName {
     else
       new UID(in)
   }
+
+  implicit def write(in: QualifiedName) : String = in.id()
+
+  implicit val writeJson = new Writes[QualifiedName] {
+    override def writes(o: QualifiedName): JsValue = JsString(o.id())
+  }
+
 }
 
 

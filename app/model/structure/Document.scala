@@ -4,13 +4,12 @@ import play.api.libs.json._
 import play.api.libs.functional.syntax._
 
 /**
- * Document
+ * Document (inspired by martinei)
  */
-case class Document(links:  Map[String, Link] = Map() , embedded: Map[String, List[Document]] = Map(), attributes: JsObject = JsObject(Seq())) extends DocumentOrListOf {
+case class Document(links:  Map[String, DocLink] = Map() , embedded: Map[String, List[Document]] = Map(), attributes: JsObject = JsObject(Seq())) extends DocumentOrListOf {
 
-   def withLink (kv : (String, Link)) = copy (links = links+(kv._1->kv._2))
-   def withLinks (a :(String, Link), b : (String, Link), c : (String,Link)*) = copy(links = links+ (a,b, c: _*))
-
+   def withLink (kv : (String, DocLink)) = copy (links = links+(kv._1->kv._2))
+   def withLinks (a :(String, DocLink), b : (String, DocLink), c : (String,DocLink)*) = copy(links = links+ (a,b, c: _*))
 
    def withEmbedded (kv : (String,DocumentOrListOf)) : Document = {
        val list = kv._2 match {
@@ -21,8 +20,6 @@ case class Document(links:  Map[String, Link] = Map() , embedded: Map[String, Li
      val newEmbedded = embedded + (kv._1 -> (embedded.getOrElse(kv._1, List()) ++ list))
      copy(embedded = newEmbedded)
    }
-
-
 
    def withAttributes[T : OWrites](attribs : T) = {
      val newAttribs = Json.toJson(attribs).as[JsObject]
@@ -50,7 +47,7 @@ object Document {
         }
       }
 
-    val r = ((__ \ "_links").write[Map[String,Link]] and
+    val r = ((__ \ "_links").write[Map[String,DocLink]] and
       writeEmbedded and
       (__ .write[JsObject]))
     r(unlift(Document.unapply))
