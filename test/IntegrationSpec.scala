@@ -1,3 +1,4 @@
+import org.specs2.matcher.JsonMatchers
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.junit.runner._
@@ -10,7 +11,7 @@ import play.api.test.Helpers._
  * An integration test will fire up a whole play application in a real (or headless) browser
  */
 @RunWith(classOf[JUnitRunner])
-class IntegrationSpec extends Specification {
+class IntegrationSpec extends Specification with JsonMatchers {
 
   "Application" should {
 
@@ -18,7 +19,12 @@ class IntegrationSpec extends Specification {
 
       browser.goTo("http://localhost:" + port)
 
-      browser.pageSource must contain("Your new application is ready.")
+      val json: String = browser.pageSource()
+
+      println(json)
+
+      json must contain("schemas")
+
     }
   }
 }

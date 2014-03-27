@@ -34,7 +34,7 @@ class GenericResourceControllerSpec extends Specification with WithSingleFakeApp
       val uid = UID("xyz-post-link")
 
       MockGraphAccess.clear()
-      MockGraphAccess.store(new GenericResource())
+      MockGraphAccess.store(new GenericResource(uid))
 
       val r = post(controllers.routes.GenericResourceController.postLinksGeneric("xyz-post-link").url,
         """[
