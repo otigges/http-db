@@ -35,11 +35,7 @@ object GenericResourceController extends BaseController {
       }.getOrElse(NotFound(s"Found no resource with UID ${uid}"))
   }
 
-  def get(resourceType: String, uid: String) = play.mvc.Results.TODO
-
   def getLinksGeneric(uid: String) = play.mvc.Results.TODO
-
-  def getLinks(resourceType: String, uid: String) = play.mvc.Results.TODO
 
   def putGeneric(uid: String) = Action {
     implicit request =>

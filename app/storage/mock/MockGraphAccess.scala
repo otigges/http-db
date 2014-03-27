@@ -12,6 +12,8 @@ object MockGraphAccess extends GraphAccess {
 
   private val memStore = new MMap[QualifiedName, Resource]()
 
+  addFixtures()
+
   // ------------------------------------------------------
 
   def findResource(qn : QualifiedName) : Option[Resource] = memStore.get(qn)
