@@ -8,7 +8,7 @@ import model.structure.Document
 import play.api.libs.json._
 import play.api.libs.json.JsObject
 import storage.base.{ResourceResolver, AssociationManager}
-import model.schema.ResourceSchema
+import model.schema.{ValidationResult, SchemaValidator, ResourceSchema}
 
 object TypedResourceController extends BaseController {
 
@@ -27,6 +27,24 @@ object TypedResourceController extends BaseController {
 
   //-------------------------------------------------------
 
+  def index() = Action { implicit request =>
+    val map: Map[String, String] = schemaStore.all().map {
+      schema =>
+        val uid = schema.resourceType.id()
+        (uid, baseUrl + routes.TypedResourceController.getAll(uid).url)
+    }.toMap
+
+    Ok(Json.toJson(Document(Map(), Map(), Json.obj("entities" -> map))))
+
+  }
+
+  def getAll(resourceType: String) = Action {
+    schemaStore.findSchema(QualifiedName.read(resourceType)).map {
+      schema =>
+        Ok(Json.toJson(schema))
+    }.getOrElse(NotFound("ResourceType/Schema not found"))
+  }
+
   def get(resourceType: String, uid: String) = Action {
     implicit request =>
       Logger.info(s"Requesting resource ${uid} of type ${resourceType}")
@@ -34,7 +52,7 @@ object TypedResourceController extends BaseController {
       lookup(resourceType, uid) match {
         case Right(r) =>
           render {
-            case Accepts.Json() => Ok(Json.toJson(Document(Map(), Map(), Resource.toJson(resourceBaseUrl, r._1))))
+            case Accepts.Json() => Ok(Json.toJson(Document(Map(), Map(), Resource.toJson(resourceBaseUrl, r))))
           }
         case Left(s) => NotFound(s)
       }
@@ -42,14 +60,33 @@ object TypedResourceController extends BaseController {
 
   def getLinks(resourceType: String, uid: String) = play.mvc.Results.TODO
 
+  def post(resourceType: String) = Action {
+    implicit request =>
+      schema(resourceType).map {
+        schema =>
+          withJsonBody {
+            json =>
+              val resource = GenericResource.fromJson(UID(), json.as[JsObject])
+              val result: ValidationResult = new SchemaValidator(schema).validate(resource)
+              if (result.isSuccess) {
+                // TODO: set type
+                graphAccess.store(resource)
+                Created
+              } else {
+                Conflict(result.toString)
+              }
+          }.getOrElse(BadRequest("No valid JSON body."))
+      }.getOrElse(NotFound("Schema not found."))
+  }
+
   //-------------------------------------------------------
 
-  private def lookup(resourceType: String, uid: String): Either[String, (Resource, ResourceSchema)] = {
+  private def lookup(resourceType: String, uid: String): Either[String, TypedResource] = {
     schema(resourceType).map {
       schema =>
         resource(uid).map {
           resource =>
-            Right(resource, schema)
+            Right(new TypedResource(resource, schema))
         }.getOrElse(Left("Resource Not Found"))
     }.getOrElse(Left("Schema not found"))
   }
@@ -57,6 +94,5 @@ object TypedResourceController extends BaseController {
   private def schema(sid: String): Option[ResourceSchema] = schemaStore.findSchema(QualifiedName.read(sid))
 
   private def resource(rid: String): Option[Resource] = graphAccess.findResource(QualifiedName.read(rid))
-
 
 }

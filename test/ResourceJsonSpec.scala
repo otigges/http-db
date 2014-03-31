@@ -1,4 +1,4 @@
-import model.UID
+import model.schema.{Cardinality, DataType, PropertyDecl, ResourceSchema}
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.specs2.matcher.JsonMatchers
@@ -52,10 +52,33 @@ class ResourceJsonSpec extends Specification with JsonMatchers {
 
       resource.qn().id() mustEqual  "def"
       resource.attributes() must have size 3
-      resource.attribute("name").value() must_== "Joe"
-      resource.attribute("age").value() must_== 42
-      resource.attribute("alive").value() must_== true
+      resource.attribute("name").value must_== "Joe"
+      resource.attribute("age").value must_== 42
+      resource.attribute("alive").value must_== true
       resource.attribute("id") must beNull
+    }
+  }
+
+  "TypedResources" should {
+
+    val personSchema: ResourceSchema = ResourceSchema(UID("Person"), List(
+      PropertyDecl("name", DataType.Text, Cardinality.exactlyOne),
+      PropertyDecl("favoriteSong", DataType.Text, Cardinality.zeroOrOne)
+    ))
+
+    "have schema's attributes order in JSON" in {
+
+      val uid = UID()
+      val json = Resource.toJson("", new TypedResource(new GenericResource(uid, Seq(
+        new TextAttribute("name", "n1"),
+        new TextAttribute("notdefined", "n2")
+      )), personSchema)).toString()
+
+      json must /("id" -> uid.id())
+      json must /("name" -> "n1")
+      json must /("favoriteSong" -> null)
+      json must not /("notdefined" -> "n2")
+
     }
   }
 

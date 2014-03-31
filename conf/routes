@@ -10,8 +10,11 @@ GET        /resources/:uid/links              controllers.GenericResourceControl
 PUT        /resources/:uid                    controllers.GenericResourceController.putGeneric(uid: String)
 POST       /resources/:uid/links              controllers.GenericResourceController.postLinksGeneric(uid: String)
 
+GET        /entities                          controllers.TypedResourceController.index
+GET        /entities/:rtype                   controllers.TypedResourceController.getAll(rtype: String)
 GET        /entities/:rtype/:uid              controllers.TypedResourceController.get(rtype: String, uid: String)
 GET        /entities/:rtype/:uid/links        controllers.TypedResourceController.getLinks(rtype: String, uid: String)
+POST       /entities/:rtype                   controllers.TypedResourceController.post(rtype: String)
 
 GET        /schemas                           controllers.SchemaController.index()
 GET        /schemas/:uid                      controllers.SchemaController.get(uid: String)

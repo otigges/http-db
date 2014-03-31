@@ -2,6 +2,7 @@ package model
 
 import play.api.libs.json._
 import scala.collection.Set
+import model.schema.ResourceSchema
 
 trait Resource {
 
@@ -11,7 +12,7 @@ trait Resource {
 
   def attribute(name: String) : Attribute[Any] = attributeOption(name).getOrElse(null)
 
-  def attributeOption(name: String) : Option[Attribute[Any]] = attributes().find(p => p.name() == name)
+  def attributeOption(name: String) : Option[Attribute[Any]] = attributes().find(p => p.name == name)
 
   def associations() : Set[Association]
 
@@ -63,11 +64,36 @@ object GenericResource {
           case JsString(x) => new TextAttribute(name, x)
           case JsNumber(x) => new NumberAttribute(name, x)
           case JsBoolean(x) => new BooleanAttribute(name, x)
+          case JsNull => new NullAttribute(name)
           case _ => throw new RuntimeException("Invalid json type")
         }
     }
 
     new GenericResource(QualifiedName.read(uid), attributes.toSeq)
   }
+
+}
+
+class TypedResource(resource: Resource, schema: ResourceSchema)
+  extends Resource
+{
+
+  override def qn(): QualifiedName = resource.qn()
+
+  override def associations(): Set[Association] = resource.associations()
+
+  override def attributes(): Seq[Attribute[Any]] = {
+    schema.properties.map (
+      decl =>
+        resource.attributeOption(decl.name).getOrElse(new NullAttribute(decl.name))
+    )
+  }
+
+  override def ++(assocs: Association*): Resource = {
+    new TypedResource(resource ++ (assocs: _*), schema)
+  }
+
+
+
 
 }

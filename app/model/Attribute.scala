@@ -5,60 +5,74 @@ import model.AttrType.AttrType
 
 object AttrType extends Enumeration {
   type AttrType = Value
-  val Text, Number, Boolean = Value
+  val Text, Number, Boolean, Null = Value
 }
 
 trait Attribute[+T] {
 
-  def name() : String
+  def name : String
 
-  def value() : T
+  def value : T
 
-  def attrType() : AttrType
+  def attrType : AttrType
 
-  def valueAsString() : String
+  def valueAsString : String
 
 }
 
 class TextAttribute(attrName: String, attrValue: String) extends Attribute[String] {
 
-  def name(): String = attrName
+  def name: String = attrName
 
-  def value(): String = attrValue
+  def value: String = attrValue
 
-  def valueAsString(): String = attrValue
+  def valueAsString: String = attrValue
 
-  def attrType() = AttrType.Text
+  def attrType = AttrType.Text
 
-  override def toString() = attrName + "=" + attrValue
+  override def toString = attrName + "=" + attrValue
 
 }
 
 class NumberAttribute(attrName: String, attrValue: BigDecimal) extends Attribute[BigDecimal] {
 
-  def name(): String = attrName
+  def name: String = attrName
 
-  def value(): BigDecimal = attrValue
+  def value: BigDecimal = attrValue
 
-  def valueAsString(): String = attrValue.toString
+  def valueAsString: String = attrValue.toString
 
-  def attrType() = AttrType.Number
+  def attrType = AttrType.Number
 
-  override def toString() = attrName + "=" + attrValue
+  override def toString = attrName + "=" + attrValue
 
 }
 
 class BooleanAttribute(attrName: String, attrValue: Boolean) extends Attribute[Boolean] {
 
-  def name(): String = attrName
+  def name: String = attrName
 
-  def value(): Boolean = attrValue
+  def value: Boolean = attrValue
 
-  def valueAsString(): String = attrValue.toString
+  def valueAsString: String = attrValue.toString
 
-  def attrType() = AttrType.Boolean
+  def attrType = AttrType.Boolean
 
-  override def toString() = attrName + "=" + attrValue
+  override def toString = attrName + "=" + attrValue
+
+}
+
+class NullAttribute(attrName: String, attributeType: AttrType = AttrType.Null) extends Attribute[Any] {
+
+  def name: String = attrName
+
+  def value: Any = null
+
+  def valueAsString: String = ""
+
+  override def attrType: AttrType = attributeType
+
+  override def toString = attrName + "=null"
 
 }
 
@@ -66,9 +80,10 @@ object Attribute {
   implicit val jsonWrites = new Writes[Attribute[Any]] {
     override def writes(a: Attribute[Any]): JsValue = {
       a.attrType match {
-        case AttrType.Text => Json.obj(a.name() -> a.valueAsString())
-        case AttrType.Number => Json.obj(a.name() -> a.value.asInstanceOf[BigDecimal])
-        case AttrType.Boolean => Json.obj(a.name() -> a.value.asInstanceOf[Boolean])
+        case AttrType.Text => Json.obj(a.name -> a.valueAsString)
+        case AttrType.Number => Json.obj(a.name -> a.value.asInstanceOf[BigDecimal])
+        case AttrType.Boolean => Json.obj(a.name -> a.value.asInstanceOf[Boolean])
+        case AttrType.Null => Json.obj(a.name -> JsNull)
       }
     }
 
