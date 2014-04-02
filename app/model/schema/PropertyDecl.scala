@@ -5,7 +5,7 @@ import play.api.libs.json.JsString
 
 
 object DataType extends Enumeration {
-  val Resource, Text, Number, Boolean = Value
+  val Resource, Text, Number, Boolean, Complex = Value
 }
 
 case class Cardinality(min: Int = 0, max: Int = 1, unbound: Boolean = false) {
@@ -32,10 +32,17 @@ object PropertyDecl {
   implicit val writeJson = new Writes[PropertyDecl] {
     override def writes(p: PropertyDecl): JsValue = Json.obj(
       "name" -> p.name,
-      "datatype" -> p.dataType.toString,
+      "dataType" -> p.dataType.toString,
       "cardinality" -> p.cardinality.toString
     )
   }
 }
+
+trait Constraint {
+
+}
+
+case class ComplexAttributeConstraint(properties : List[PropertyDecl] = List()) extends Constraint
+
 
 

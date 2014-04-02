@@ -24,9 +24,16 @@ class ResourceJsonSpec extends Specification with JsonMatchers {
         new NumberAttribute("age", 42),
         new NumberAttribute("size", 3.21441241241112232232123),
         new BooleanAttribute("y", true),
-        new BooleanAttribute("n", false)
+        new BooleanAttribute("n", false),
+        new SeqAttribute("seq", Seq(NumberValue(11), TextValue("luke"))),
+        new ComplexAttribute("subs", Seq(
+          new BooleanAttribute("subB", true),
+          new TextAttribute("subT", "bla"),
+          new NumberAttribute("subN", 7),
+          new ComplexAttribute("subC", Seq(new TextAttribute("subsub", "leia"))),
+          new SeqAttribute("subA", Seq(NumberValue(5)))
+        ))
       ))).toString()
-
 
       json must /("id" -> uid.id())
       json must /("name" -> "n1")
@@ -35,6 +42,13 @@ class ResourceJsonSpec extends Specification with JsonMatchers {
       json must /("size" -> 3.21441241241112232232123)
       json must /("y" -> true)
       json must /("n" -> false)
+      json must /("subs") /("subB" -> true)
+      json must /("subs") /("subT" -> "bla")
+      json must /("subs") /("subN" -> 7)
+      json must /("subs") /("subC") /("subsub" -> "leia")
+      json must /("subs") /("subA") /# 0 / 5
+      json must /("seq") /# 0 / 11
+      json must /("seq") /# 1 / "luke"
 
     }
 
@@ -44,14 +58,21 @@ class ResourceJsonSpec extends Specification with JsonMatchers {
                                        |  "id" : "abc",
                                        |  "name" : "Joe",
                                        |  "age" : 42,
-                                       |  "alive" : true
+                                       |  "alive" : true,
+                                       |  "likes" : [ "x", 1, true ],
+                                       |  "address" : {
+                                       |    "city" : "Dublin",
+                                       |    "zip" : "12345",
+                                       |    "street" : "main street",
+                                       |    "tags" : ["here", "there", "nowhere"]
+                                       |  }
                                        |}
                                      """.stripMargin)
       
       val resource = GenericResource.fromJson("def", json.as[JsObject])
 
       resource.qn().id() mustEqual  "def"
-      resource.attributes() must have size 3
+      resource.attributes() must have size 5
       resource.attribute("name").value must_== "Joe"
       resource.attribute("age").value must_== 42
       resource.attribute("alive").value must_== true

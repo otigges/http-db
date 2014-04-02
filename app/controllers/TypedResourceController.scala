@@ -71,9 +71,9 @@ object TypedResourceController extends BaseController {
               if (result.isSuccess) {
                 // TODO: set type
                 graphAccess.store(resource)
-                Created
+                Created.withHeaders("Location" -> location(resourceType, resource.qn().id()))
               } else {
-                Conflict(result.toString)
+                Conflict(Json.toJson(Document(Map(), Map(), Json.toJson(result).as[JsObject])))
               }
           }.getOrElse(BadRequest("No valid JSON body."))
       }.getOrElse(NotFound("Schema not found."))
@@ -94,5 +94,9 @@ object TypedResourceController extends BaseController {
   private def schema(sid: String): Option[ResourceSchema] = schemaStore.findSchema(QualifiedName.read(sid))
 
   private def resource(rid: String): Option[Resource] = graphAccess.findResource(QualifiedName.read(rid))
+
+  private def location(resourceType: String, uid: String)(implicit request: Request[Any]) : String =
+    routes.TypedResourceController.get(resourceType, uid).url
+
 
 }
