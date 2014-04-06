@@ -6,7 +6,7 @@ import scala.Some
 
 trait Validator {
 
-  def validate(resource: Resource) : ValidationResult
+  def validate(attributes: Seq[Attribute[Any]]) : ValidationResult
 
 }
 
@@ -41,27 +41,37 @@ object ValidationResult {
   }
 }
 
-class SchemaValidator(schema: ResourceSchema) extends Validator {
+class SchemaValidator(properties: List[PropertyDecl]) extends Validator {
 
-  val propMap: Map[String, PropertyDecl] = schema.properties.map(decl => (decl.name, decl)).toMap
+  def this(schema: ResourceSchema) = this(schema.properties)
 
-  override def validate(resource: Resource): ValidationResult = {
+  val propMap: Map[String, PropertyDecl] = properties.map(decl => (decl.name, decl)).toMap
 
-    val unmatchedMandatories: List[PropertyDecl] = schema.properties.filter(
-      decl => resource.attributeOption(decl.name).isEmpty && decl.cardinality.min > 0
+  def validate(resource: Resource): ValidationResult = {
+    validate(resource.attributes())
+  }
+
+  override def validate(attributes: Seq[Attribute[Any]]): ValidationResult = {
+
+    val unmatchedMandatories: List[PropertyDecl] = properties.filter(
+      decl => !attributes.exists(a => a.name == decl.name) && decl.cardinality.min > 0
     )
 
-    val undeclaredAttributes = resource.attributes().filterNot {
+    val undeclaredAttributes = attributes.filterNot {
       attr =>
         propMap.get(attr.name).isDefined
     }
+
+    val declaredAttributes = attributes.diff(undeclaredAttributes)
 
     val violations: List[Violation] = (
         unmatchedMandatories.map(errorMandatory)
           ++
         undeclaredAttributes.map(errorUndeclared)
           ++
-        typeViolations(resource.attributes())
+        typeViolations(declaredAttributes)
+          ++
+        constraintViolations(declaredAttributes)
     )
 
     if (violations.isEmpty)
@@ -78,6 +88,12 @@ class SchemaValidator(schema: ResourceSchema) extends Validator {
 
   def typeViolations(attributes: Seq[Attribute[Any]]): List[Violation] = {
     List()
+  }
+
+  def constraintViolations(attributes: Seq[Attribute[Any]]): List[Violation] = {
+    attributes.flatMap (
+      attr => propMap(attr.name).constraints.flatMap(constraint => constraint.validate(attr))
+    ).toList
   }
 
   // Violation builders

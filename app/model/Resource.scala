@@ -55,35 +55,7 @@ object GenericResource {
 
   def fromJson(uid: String, json: JsObject) : GenericResource = {
 
-    def valueFromJson(value: JsValue) : Value[Any] = {
-
-      value match {
-        case JsString(x) => TextValue(x)
-        case JsNumber(x) => NumberValue(x)
-        case JsBoolean(x) => BooleanValue(x)
-        case JsObject(xs) => ComplexValue(xs.map(attrFromJson), AttrType.Complex)
-        case JsArray(xs) => ComplexValue(xs.map(valueFromJson), AttrType.Sequence)
-        case JsNull => NullValue
-        case _ => throw new RuntimeException("Invalid json type: " + value)
-      }
-    }
-
-    def attrFromJson(attr: (String, JsValue)) : Attribute[Any] = {
-      val name = attr._1
-      val value: JsValue = attr._2
-
-      value match {
-        case JsString(x) => new TextAttribute(name, x)
-        case JsNumber(x) => new NumberAttribute(name, x)
-        case JsBoolean(x) => new BooleanAttribute(name, x)
-        case JsObject(xs) => new ComplexAttribute(name, xs.map(attrFromJson))
-        case JsArray(xs) => new SeqAttribute(name, xs.map(valueFromJson))
-        case JsNull => new NullAttribute(name)
-        case _ => throw new RuntimeException("Invalid json type: " + value)
-      }
-    }
-
-    val attributes: Set[Attribute[Any]] = json.fieldSet.filterNot( f => f._1.trim == "id").map(attrFromJson)
+    val attributes: Set[Attribute[Any]] = json.fieldSet.filterNot( f => f._1.trim == "id").map(Attribute.fromJson)
 
     new GenericResource(QualifiedName.read(uid), attributes.toSeq)
   }

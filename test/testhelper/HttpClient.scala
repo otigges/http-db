@@ -8,17 +8,24 @@ import scala.concurrent.Future
 
 trait HttpClient {
   
-  def post (call : Call, json :String): Any = {
+  def post (call : Call, json :String): Future[SimpleResult] = {
     post (call.url, json)
   }
-  
+
+  def post (call : Call, json :JsValue): Future[SimpleResult] = {
+    post (call.url, json.toString())
+  }
+
+  def post (url : String, json :JsValue): Future[SimpleResult] = {
+    post (url, json.toString())
+  }
+
   def post (url : String, json : String): Future[SimpleResult] = {
     val fakeRequest = FakeRequest(Helpers.POST, url).withJsonBody(Json.parse(json))
     route(fakeRequest).get
   }
-  
-  
-  def put (call : Call, json :String): Any = {
+
+  def put (call : Call, json :String): Future[SimpleResult] = {
     put (call.url, json)
   }
   

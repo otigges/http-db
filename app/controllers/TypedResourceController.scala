@@ -41,7 +41,7 @@ object TypedResourceController extends BaseController {
   def getAll(resourceType: String) = Action {
     schemaStore.findSchema(QualifiedName.read(resourceType)).map {
       schema =>
-        Ok(Json.toJson(schema))
+        Ok(ResourceSchema.toJson(schema))
     }.getOrElse(NotFound("ResourceType/Schema not found"))
   }
 
@@ -96,7 +96,7 @@ object TypedResourceController extends BaseController {
   private def resource(rid: String): Option[Resource] = graphAccess.findResource(QualifiedName.read(rid))
 
   private def location(resourceType: String, uid: String)(implicit request: Request[Any]) : String =
-    routes.TypedResourceController.get(resourceType, uid).url
+    baseUrl + routes.TypedResourceController.get(resourceType, uid).url
 
 
 }

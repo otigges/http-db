@@ -1,8 +1,12 @@
-import model.schema.{Cardinality, DataType, PropertyDecl, ResourceSchema}
+import model.NumberValue
+import model.schema._
+import model.TextValue
+import model.UID
 import org.specs2.mutable._
 import org.specs2.runner._
 import org.specs2.matcher.JsonMatchers
 import org.junit.runner._
+import play.api.libs.json.JsObject
 import play.api.libs.json.{JsObject, Json, JsValue}
 
 import model._

@@ -34,8 +34,14 @@ object MockSchemaStore extends SchemaStore {
   def addMFixtures() = {
     store(ResourceSchema(UID("Person"), List(
       PropertyDecl("name", DataType.Text, Cardinality.exactlyOne),
-      PropertyDecl("favoriteSong", DataType.Text, Cardinality.zeroOrOne)
-    )))
+      PropertyDecl("favoriteSong", DataType.Text, Cardinality.zeroOrOne),
+      PropertyDecl("address", DataType.Complex, Cardinality.zeroOrOne, List(new ComplexAttributeConstraint(List(
+        PropertyDecl("street", DataType.Text, Cardinality.exactlyOne),
+        PropertyDecl("zip", DataType.Number, Cardinality.exactlyOne),
+        PropertyDecl("city", DataType.Text, Cardinality.exactlyOne)
+      ))))
+      )
+    ))
     store(ResourceSchema(UID("Organization"), List(PropertyDecl("name", DataType.Text))))
   }
 

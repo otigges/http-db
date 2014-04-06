@@ -42,7 +42,7 @@ case class TextValue(value: String) extends Value[String]{
 
 case class NumberValue(value: BigDecimal) extends Value[BigDecimal]{
 
-  override def valueAsString: String = value.toString
+  override def valueAsString: String = value.toString()
 
   override def attrType: AttrType = AttrType.Number
 
@@ -65,13 +65,22 @@ object NullValue extends Value[Any]{
   override def value: Any = null
 }
 
-case class ComplexValue[T](value: T, attrType: AttrType) extends Value[T]{
+case class ComplexValue(value: Seq[Attribute[Any]]) extends Value[Seq[Attribute[Any]]]{
 
   override def valueAsString: String = value.toString
 
+  override def attrType: AttrType = AttrType.Complex
 }
 
-abstract class SimpleAttribute[T](attrName: String, attrValue: Value[T]) extends Attribute[T] {
+case class SeqValue(value: Seq[Value[Any]]) extends Value[Seq[Value[Any]]]{
+
+  override def valueAsString: String = value.toString
+
+  override def attrType: AttrType = AttrType.Sequence
+
+}
+
+class SimpleAttribute[T](attrName: String, attrValue: Value[T]) extends Attribute[T] {
 
   def name: String = attrName
 
@@ -113,7 +122,7 @@ class SeqAttribute(attrName: String, attrValue: Seq[Value[Any]]) extends Attribu
 
   override def valueAsString: String = attrValue.toString()
 
-  override def valueDefinition: Value[Seq[Value[Any]]] = ComplexValue(attrValue, AttrType.Sequence)
+  override def valueDefinition: Value[Seq[Value[Any]]] = SeqValue(attrValue)
 
 }
 
@@ -127,16 +136,29 @@ class ComplexAttribute(attrName: String, attrValue: Seq[Attribute[Any]]) extends
 
   override def valueAsString: String = attrValue.toString()
 
-  override def valueDefinition: Value[Seq[Attribute[Any]]] = ComplexValue(attrValue, AttrType.Complex)
+  override def valueDefinition: Value[Seq[Attribute[Any]]] = ComplexValue(attrValue)
 }
 
 
 object Attribute {
   implicit val jsonWrites = new Writes[Attribute[Any]] {
     override def writes(a: Attribute[Any]): JsValue = {
-
       Json.obj(a.name -> Value.toJson(a.valueDefinition))
+    }
+  }
 
+  def fromJson(attr: (String, JsValue)) : Attribute[Any] = {
+    val name = attr._1
+    val value: JsValue = attr._2
+
+    value match {
+      case JsString(x) => new TextAttribute(name, x)
+      case JsNumber(x) => new NumberAttribute(name, x)
+      case JsBoolean(x) => new BooleanAttribute(name, x)
+      case JsObject(xs) => new ComplexAttribute(name, xs.map(fromJson))
+      case JsArray(xs) => new SeqAttribute(name, xs.map(Value.fromJson))
+      case JsNull => new NullAttribute(name)
+      case _ => throw new RuntimeException("Invalid json type: " + value)
     }
   }
 }
@@ -156,7 +178,19 @@ object Value {
     case AttrType.Null => JsNull
   }
 
-  def isComplex(v: Value[Any]) = v.isInstanceOf[ComplexValue[Any]]
+  def fromJson(value: JsValue) : Value[Any] = {
+    value match {
+      case JsString(x) => TextValue(x)
+      case JsNumber(x) => NumberValue(x)
+      case JsBoolean(x) => BooleanValue(x)
+      case JsObject(xs) => ComplexValue(xs.map(Attribute.fromJson))
+      case JsArray(xs) => SeqValue(xs.map(fromJson))
+      case JsNull => NullValue
+      case _ => throw new RuntimeException("Invalid json type: " + value)
+    }
+  }
+
+  def isComplex(v: Value[Any]) = v.isInstanceOf[ComplexValue]
   def isSequence(v: Value[Any]) = v.attrType == AttrType.Sequence
   def isObject(v: Value[Any]) = v.attrType == AttrType.Sequence
 
