@@ -1,0 +1,64 @@
+[
+
+    {
+        "describes": "Organization",
+        "properties": [
+        {
+            "name": "name",
+            "type": "Text",
+            "cardinality": "0..*"
+        }
+        ]
+    },
+    {
+        "describes": "Person",
+        "properties": [
+            {
+            "name": "name",
+            "type": "Text",
+            "cardinality": "1..1"
+            },
+            {
+            "name": "favoriteSong",
+            "type": "Text",
+            "cardinality": "0..1"
+            },
+            {
+            "name": "address",
+            "type": "Complex",
+            "cardinality": "0..1",
+            "properties": [
+                {
+                "name": "street",
+                "type": "Text",
+                "cardinality": "1..1"
+                },
+                {
+                "name": "zip",
+                "type": "Number",
+                "cardinality": "1..1"
+                },
+                {
+                "name": "city",
+                "type": "Text",
+                "cardinality": "1..1"
+                }
+            ]
+            }
+        ]
+    },
+    {
+        "describes": "Location",
+        "properties": [
+            {
+                "name": "name",
+                "type": "Text",
+                "cardinality": "1..1"
+            }, {
+                "name": "tags",
+                "type": "Text",
+                "cardinality": "0..n"
+            }
+        ]
+    }
+]

@@ -1,0 +1,75 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
+require 'rubygems'
+require 'net/https'
+require 'json'
+require 'optparse'
+
+require_relative 'common/configure'
+require_relative 'common/authenticate'
+require_relative 'common/http_util'
+
+# Parse command line options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: rvn-publish [options]"
+  opts.on("-v", "--verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+  opts.on("-u", "--user=USER", "Initial user name") do |user|
+    options[:user] = user
+  end
+  opts.on("-p", "--password=PASSWORD", "Initial user's password") do |password|
+    options[:password] = password
+  end
+  opts.on("-e", "--environment=ENVIRONMENT", "Environment") do |environment|
+    options[:environment] = environment
+  end
+  opts.on("-h", "--help", "Display this help") do |help|
+    puts opts
+    exit 0
+  end
+end.parse!
+
+def create_domain(config)
+  uri   = URI.parse("#{config[:base_uri]}/service/domains/#{config[:domain]}")
+  puts "Publishing to URI: #{uri}"
+  exec_post_request(uri, config) { |request| }
+end
+
+def create_user(config)
+  uri   = URI.parse("#{config[:base_uri]}/service/domains/#{config[:domain]}/users")
+  puts "Publishing to URI: #{uri}"
+  user = {:name => config[:user], :password => config[:password], :homeDomain => config[:domain], :email => config[:email]}.to_json
+
+  begin
+    http  = init_http_object(uri)
+    request = init_post_request(uri, config)
+    request.add_field 'Content-Type', 'application/json'
+    request.body = user
+    response = http.request(request)
+    puts "Response: #{response.code} #{response['Location']}"
+  rescue OpenSSL::SSL::SSLError => exception
+    handle_exception(uri.to_s, exception)
+  rescue JSON::ParserError => exception
+    handle_exception(uri.to_s, exception)
+  rescue Exception => exception
+    handle_exception(uri.to_s, exception)
+  end
+end
+
+# BEGIN
+
+env = options[:environment] || 'default'
+
+config = configure(nil, env)
+puts "Bootstraping for configuration: #{config} using opptions: #{options}"
+
+user_ctx = UserCtx.new options[:user], options[:password]
+user_ctx.authenticate config
+config[:token] = user_ctx.token
+
+create_domain(config)
+create_user(config)
+

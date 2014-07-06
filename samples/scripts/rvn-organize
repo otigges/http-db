@@ -1,0 +1,104 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
+require 'rubygems'
+require 'net/https'
+require 'json'
+require 'optparse'
+
+require_relative 'common/configure'
+require_relative 'common/authenticate'
+require_relative 'common/http_util'
+
+# Parse command line options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: rvn-publish [options]"
+  opts.on("-v", "--verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+  opts.on("-u", "--user=USER", "User name") do |user|
+    options[:user] = user
+  end
+  opts.on("-p", "--password=PASSWORD", "Password") do |password|
+    options[:password] = password
+  end
+   opts.on("-d", "--domain=DOMAIN", "The domain") do |domain|
+   options[:domain] = domain
+  end
+   opts.on("-c", "--context=CONTEXT", "The context") do |context|
+   options[:context] = context
+  end
+    opts.on("-e", "--entity=ENTITY", "Entity: domain, context, namespace") do |entity|
+    options[:entity] = entity
+  end  
+  opts.on("-a", "--action=ACTION", "Action: create, update, delete, ") do |action|
+    options[:action] = action
+  end
+  opts.on("-b", "--base-uri=BASEURI", "Base URI of service") do |base_uri|
+    options[:base_uri] = base_uri
+  end
+  opts.on("-i", "--in=IN", "Directory or file to publish") do |input|
+    options[:in] = input
+  end
+  opts.on("-h", "--help", "Display this help") do |help|
+    puts opts
+    exit 0
+  end
+end.parse!
+
+def handle_exception(uri, exception) 
+  $stderr.puts "\n\nERROR in #{$0} trying to access \"#{uri}\": #{exception.to_s}\n#{exception.backtrace.join("\n")}\n\n"
+end
+
+def create_domain(config, token)
+  base_uri = config[:base_uri]
+  domain   = config[:domain]
+  uri   = URI.parse("#{base_uri}/service/domains/#{domain}")
+  puts "Publishing to URI: #{uri}"
+  http  = init_http_object uri config
+
+  begin
+    request = Net::HTTP::Post.new(uri.request_uri)
+    request.add_field 'Cookie', "lfrb-session-auth=#{token}"
+    response = http.request(request)
+    puts "Response: #{response.code} #{response['Location']}"
+  rescue OpenSSL::SSL::SSLError => exception
+    handle_exception(uri.to_s, exception)
+  rescue JSON::ParserError => exception
+    handle_exception(uri.to_s, exception)
+  rescue Exception => exception
+    handle_exception(uri.to_s, exception)
+  end
+end
+
+def create_user(config, token)
+  uri   = URI.parse("#{base_uri}/service/domains/#{domain}/users")
+  puts "Publishing to URI: #{uri}"
+  user = {:name => config[:user], :password => config[:password], :homeDomain => config[:domain]}.to_json
+  exec_post_request(uri, config) do |request| 
+    request.add_field 'Content-Type', 'application/json'
+    request.body = user
+  end
+end
+
+# BEGIN
+
+config = configure(options)
+puts "Using configuration: #{config}"
+
+user_ctx = UserCtx.new config[:user], config[:password]
+user_ctx.authenticate config
+token = user_ctx.token
+
+case config[:entity]
+when 'domain'
+  create_domain(config, token)
+when 'user'
+  create_user(config, token)
+else 
+  $stderr.puts "Entity #{config[:entity]} not yet supported."
+end
+
+
+

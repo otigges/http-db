@@ -6,6 +6,8 @@ import model._
 import model.ComplexValue
 import play.api.Logger
 
+import scala.util.matching.Regex
+
 
 object DataType extends Enumeration {
   val Resource, Text, Number, Boolean, Complex = Value
@@ -30,13 +32,26 @@ case class Cardinality(min: Int = 0, max: Int = 1, unbound: Boolean = false) {
 }
 
 object Cardinality {
+  val regex: Regex = new Regex("(\\d+)\\.\\.(\\d+|\\*|n)", "min", "max")
   def exactlyOne = Cardinality(1,1)
   def zeroOrOne = Cardinality(0,1)
   def unbound = Cardinality(0, Int.MaxValue, unbound = true)
 
-  def parse(s: String) : Cardinality = {
-    Logger.warn("Cardinality Parsing not yet Implemented")
-    unbound
+  def parse(s: String) : Either[String, Cardinality] = {
+    if ("*".equals(s.trim)) {
+      Right(Cardinality.unbound)
+    } else {
+      regex findFirstIn s match {
+        case Some(regex(min, max)) => {
+          if ("*".equals(max) || "n".equals(max)) {
+            Right(Cardinality(min.toInt, Int.MaxValue, unbound = true))
+          } else {
+            Right(Cardinality(min.toInt, max.toInt))
+          }
+        }
+        case _ => Left(s"Expression ${s} is not a valid cardinality.")
+      }
+    }
   }
 }
 
@@ -69,7 +84,9 @@ object PropertyDecl {
     val dataType: String = (js \ "type").as[String]
     val cardinality: String = (js \ "cardinality").as[String]
 
-    new PropertyDecl(name, DataType.withName(dataType), Cardinality.parse(cardinality))
+    Cardinality.parse(cardinality).right.map( card =>
+      new PropertyDecl(name, DataType.withName(dataType), card)
+    ).right.get
   }
 }
 

@@ -3,7 +3,7 @@ package controllers
 import storage.mock.MockSchemaStore
 import play.api.Logger
 import play.api.mvc.{Request, Action}
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.{JsValue, JsArray, JsObject, Json}
 import model.structure.{DocLink, Document}
 import model.{QualifiedName, Resource}
 import model.schema.ResourceSchema
@@ -38,14 +38,26 @@ object SchemaController extends BaseController {
     implicit request =>
       withJsonBody {
         body =>
-          val schema: ResourceSchema = ResourceSchema.fromJson(body)
-          Logger.info(s"Creating schema: ${schema}")
-          if (schemaStore.findSchema(schema.resourceType).isEmpty) {
-            schemaStore.store(schema)
-            Created.withHeaders("Location" -> location(schema))
+          if (body.isInstanceOf[JsObject]) {
+            val schema: ResourceSchema = ResourceSchema.fromJson(body)
+            if (schemaStore.findSchema(schema.resourceType).isEmpty) {
+              Logger.info(s"Creating schema: ${schema}")
+              schemaStore.store(schema)
+              Created.withHeaders("Location" -> location(schema))
+            } else {
+              Logger.info(s"Schema for type ${schema} already defined.")
+              Conflict(s"Schema for type ${schema.resourceType} already defined.")
+            }
+          } else if (body.isInstanceOf[JsArray]) {
+            val values: Seq[JsValue] = body.as[JsArray].value
+            val schemas: Seq[ResourceSchema] = values.map( ResourceSchema.fromJson )
+                .map (schemaStore.store (_))
+            Logger.info(s"Stored Schemas: ${schemas.map(schema => schema.resourceType)}}")
+            Accepted(s"Stored schemas: ${schemas.map(schema => schema.resourceType)} ")
           } else {
-            Conflict(s"Schema for type ${schema.resourceType} already defined.")
+            BadRequest("Expected single JSON schema.")
           }
+
       }.getOrElse(BadRequest("No valid JSON."))
   }
 

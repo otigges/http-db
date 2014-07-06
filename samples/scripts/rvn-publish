@@ -1,0 +1,151 @@
+#!/usr/bin/env ruby
+# encoding: UTF-8
+
+require 'rubygems'
+require 'net/https'
+require 'json'
+require 'optparse'
+
+require_relative 'common/configure'
+require_relative 'common/authenticate'
+require_relative 'common/http_util'
+
+# Parse command line options
+options = {}
+OptionParser.new do |opts|
+  opts.banner = "Usage: rvn-publish [options]"
+  opts.on("-v", "--verbose", "Run verbosely") do |v|
+    options[:verbose] = v
+  end
+  opts.on("-u", "--user=USER", "User name") do |user|
+    options[:user] = user
+  end
+  opts.on("-p", "--password=PASSWORD", "Password") do |password|
+    options[:password] = password
+  end
+   opts.on("-d", "--domain=DOMAIN", "The domain") do |domain|
+   options[:domain] = domain
+  end
+   opts.on("-c", "--context=CONTEXT", "The context") do |context|
+   options[:context] = context
+  end
+  opts.on("-o", "--out=OUT", "Path to output file") do |out|
+    options[:out] = out
+  end
+  opts.on("-e", "--environment=ENVIRONMENT", "Environment") do |environment|
+    options[:environment] = environment
+  end
+  opts.on("-b", "--base-uri=BASEURI", "Base URI of service") do |base_uri|
+    options[:base_uri] = base_uri
+  end
+  opts.on("-i", "--in=IN", "Directory or file to publish") do |input|
+    options[:in] = input
+  end
+  opts.on("-h", "--help", "Display this help") do |help|
+    puts opts
+    exit 0
+  end
+end.parse!
+
+def handle_exception(uri, exception) 
+  $stderr.puts "\n\nERROR in #{$0} trying to access \"#{uri}\": #{exception.to_s}\n#{exception.backtrace.join("\n")}\n\n"
+end
+
+def derive_context(dir, default)
+  ctx_file = "#{dir}/context.info"
+  if File.exists? ctx_file
+    ctx_def = { :default => 'default' }
+    File.readlines(ctx_file).each do |line|
+      tokens = line.split '=>'
+      if (tokens.length == 2) 
+        key = tokens[0].strip
+        value = tokens[1].strip
+        ctx_def[key] = value
+      end
+    end    
+    return ctx_def
+  elsif ('metamodel' == File.basename(dir))
+    return { :default => 'typesystem' }
+  else 
+    return { :default => default }
+  end
+end
+
+def publish_schema (config, schema)
+  uri   = URI.parse("#{config[:base_uri]}/schemas")
+  puts "Publishing schema file #{schema} to URI: #{uri}"
+  response = exec_post_request(uri, config) do |request|
+    request.add_field 'Content-Type', "application/json"
+    File.open(schema, 'r') do |infile|
+      request.body = infile.read
+    end
+  end
+end
+
+def publish_graph(config, context, graph, content_type)
+  uri   = URI.parse("#{config[:base_uri]}/service/domains/#{config[:domain]}/graphs/contexts/#{context}")
+  puts "Publishing to URI: #{uri}"
+  response = exec_post_request(uri, config) do |request| 
+    request.add_field 'Content-Type', content_type
+    File.open(graph, 'r') do |infile|
+      request.body = infile.read
+    end
+  end
+end
+
+def publish_file (config, context, file) 
+  case File.extname(file)
+  when '.vspec'
+    publish_vspec(config, file)
+  when '.rsf'
+  when '.json'
+    publish_schema(config, file)
+  when '.xml'
+    publish_graph(config, context, file, 'application/rdf+xml')
+  when '.n3'
+    publish_graph(config, context, file, 'text/n3')
+  else
+    $stderr.puts "Not a valid file (extension): #{file}"
+  end
+end
+
+def publish_dir (config, context, dir_name) 
+  context = config[:context]
+  dir = Dir.new dir_name
+  ctx_def = derive_context(File.expand_path(dir), context)
+  puts "Publishing directory #{File.expand_path dir}"
+  dir.entries.select{ |c| (!c.start_with? '.') && (c != 'context.info') }. each do |c| 
+    entry = File.join(dir,c)
+    context = ctx_def[c] || ctx_def[:default]
+    puts "Current entry #{entry} (ctx => #{context})"
+    if File.directory?(entry)
+      publish_dir config, context, entry
+    else
+      publish_file config, context, entry
+    end
+  end
+end
+
+# BEGIN
+
+config = configure(options, options[:environment])
+
+unless (config[:in])
+  abort("No input to publish given. Use -h option to dispay help.")
+end
+puts "Using configuration: #{config}"
+
+# user_ctx = UserCtx.new config[:user], config[:password]
+# user_ctx.authenticate config
+# config[:token] = user_ctx.token
+
+if File.directory?(config[:in])
+  publish_dir config, config[:context], config[:in]
+else
+  publish_file config, config[:context], config[:in]
+end
+
+
+
+
+

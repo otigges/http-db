@@ -1,0 +1,5 @@
+default:
+  base_uri: http://localhost:8080/glasnost
+  domain: play
+  user: play
+  password: play

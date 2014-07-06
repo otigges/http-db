@@ -63,4 +63,29 @@ class SchemaJsonSpec extends Specification with JsonMatchers {
     }
   }
 
+  "Cardinality ranges" should {
+
+    "be parsed correctly" in {
+      val cardinality1 = Cardinality.parse("2..5").right.get
+      val cardinality2 = Cardinality.parse("0..112412424").right.get
+      val cardinality3 = Cardinality.parse("*").right.get
+      val cardinality4 = Cardinality.parse("1..*").right.get
+      val cardinality5 = Cardinality.parse("3..n").right.get
+
+      cardinality1.min mustEqual 2
+      cardinality1.max mustEqual 5
+      cardinality2.min mustEqual 0
+      cardinality2.max mustEqual 112412424
+      cardinality3.min mustEqual 0
+      cardinality3.max mustEqual Int.MaxValue
+      cardinality3.unbound must_== true
+      cardinality4.min mustEqual 1
+      cardinality4.max mustEqual Int.MaxValue
+      cardinality4.unbound must_== true
+      cardinality5.min mustEqual 3
+      cardinality5.max mustEqual Int.MaxValue
+      cardinality5.unbound must_== true
+    }
+  }
+
 }
