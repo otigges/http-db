@@ -95,10 +95,8 @@ end
 
 def publish_file (config, context, file) 
   case File.extname(file)
-  when '.vspec'
-    publish_vspec(config, file)
   when '.rsf'
-  when '.json'
+  when '.schema'
     publish_schema(config, file)
   when '.xml'
     publish_graph(config, context, file, 'application/rdf+xml')

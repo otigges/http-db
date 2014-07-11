@@ -42,7 +42,6 @@ class SchemaJsonSpec extends Specification with JsonMatchers {
       json must /("properties") /# 1 /("name" -> "location")
       json must /("properties") /# 1 /("type" -> "Text")
       json must /("properties") /# 1 /("cardinality" -> "0..1")
-
     }
   }
 
@@ -52,14 +51,11 @@ class SchemaJsonSpec extends Specification with JsonMatchers {
 
       val json: String = ResourceSchema.toJson(complex).toString()
 
-      println(json)
-
       json must /("describes" -> "Person")
       json must /("properties") /# 0 /("name" -> "name")
       json must /("properties") /# 1 /("name" -> "favoriteSong")
       json must /("properties") /# 2 /("name" -> "address")
       json must /("properties") /# 2 /("type" -> "Complex")
-
     }
   }
 
@@ -71,6 +67,9 @@ class SchemaJsonSpec extends Specification with JsonMatchers {
       val cardinality3 = Cardinality.parse("*").right.get
       val cardinality4 = Cardinality.parse("1..*").right.get
       val cardinality5 = Cardinality.parse("3..n").right.get
+      val cardinality6 = Cardinality.parse("0").right.get
+      val cardinality7 = Cardinality.parse("87").right.get
+
 
       cardinality1.min mustEqual 2
       cardinality1.max mustEqual 5
@@ -85,6 +84,12 @@ class SchemaJsonSpec extends Specification with JsonMatchers {
       cardinality5.min mustEqual 3
       cardinality5.max mustEqual Int.MaxValue
       cardinality5.unbound must_== true
+      cardinality6.min mustEqual 0
+      cardinality6.max mustEqual 0
+      cardinality6.unbound must_== false
+      cardinality7.min mustEqual 87
+      cardinality7.max mustEqual 87
+      cardinality7.unbound must_== false
     }
   }
 

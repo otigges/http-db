@@ -32,8 +32,11 @@ case class Cardinality(min: Int = 0, max: Int = 1, unbound: Boolean = false) {
 }
 
 object Cardinality {
-  val regex: Regex = new Regex("(\\d+)\\.\\.(\\d+|\\*|n)", "min", "max")
-  def exactlyOne = Cardinality(1,1)
+  val regexExactly: Regex = new Regex("(\\d+)", "exactly")
+  val regexRange: Regex = new Regex("(\\d+)(\\.\\.(\\d+|\\*|n))?$", "min", "rage", "max")
+
+  def exactlyOne = exactly(1)
+  def exactly(n: Int) = Cardinality(n,n)
   def zeroOrOne = Cardinality(0,1)
   def unbound = Cardinality(0, Int.MaxValue, unbound = true)
 
@@ -41,9 +44,11 @@ object Cardinality {
     if ("*".equals(s.trim)) {
       Right(Cardinality.unbound)
     } else {
-      regex findFirstIn s match {
-        case Some(regex(min, max)) => {
-          if ("*".equals(max) || "n".equals(max)) {
+      regexRange findFirstIn s match {
+        case Some(regexRange(min, range, max)) => {
+          if (range == null) {
+            Right(exactly(min.toInt))
+          } else if ("*".equals(max) || "n".equals(max)) {
             Right(Cardinality(min.toInt, Int.MaxValue, unbound = true))
           } else {
             Right(Cardinality(min.toInt, max.toInt))

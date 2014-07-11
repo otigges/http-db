@@ -1,0 +1,12 @@
+[
+    {
+        "describes": "Project",
+        "properties": [
+            {
+                "name": "name",
+                "type": "Text",
+                "cardinality": "1"
+            }
+        ]
+    }
+]
