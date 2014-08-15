@@ -38,10 +38,13 @@ object TypedResourceController extends BaseController {
 
   }
 
-  def getAll(resourceType: String) = Action {
+  def getAll(resourceType: String) = Action {  implicit request =>
     schemaStore.findSchema(QualifiedName.read(resourceType)).map {
       schema =>
-        Ok(ResourceSchema.toJson(schema))
+        val resources: Iterable[Resource] = graphAccess.findByType(schema.resourceType)
+        Logger.info(s"Searching all instances of ${resourceType}, found: ${resources}")
+        val jsResources = resources.map(Resource.toJson(resourceBaseUrl, _)).toSeq
+        Ok(JsArray(jsResources))
     }.getOrElse(NotFound("ResourceType/Schema not found"))
   }
 

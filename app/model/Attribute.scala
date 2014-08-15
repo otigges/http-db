@@ -88,7 +88,7 @@ class SimpleAttribute[T](attrName: String, attrValue: Value[T]) extends Attribut
 
   def attrType: AttrType = attrValue.attrType
 
-  def valueAsString: String = attrValue.toString
+  def valueAsString: String = attrValue.valueAsString
 
   def valueDefinition : Value[T] = attrValue
 

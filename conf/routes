@@ -5,6 +5,7 @@
 # Home page
 GET        /                                  controllers.HomeController.index
 
+POST       /resources                         controllers.GenericResourceController.post()
 GET        /resources/:uid                    controllers.GenericResourceController.getGeneric(uid: String)
 GET        /resources/:uid/links              controllers.GenericResourceController.getLinksGeneric(uid: String)
 PUT        /resources/:uid                    controllers.GenericResourceController.putGeneric(uid: String)

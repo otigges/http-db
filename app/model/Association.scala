@@ -22,7 +22,7 @@ object Link {
   def toJson(uriBase: String, link: Link) = Json.obj(
       "predicate" -> link.predicate.id(),
       "resource" -> link.target.id(),
-      "link" -> (uriBase + link.target.id())
+      "link" -> (uriBase + "/" + link.target.id())
   )
 
   def fromJson(json: JsValue) : Link = {

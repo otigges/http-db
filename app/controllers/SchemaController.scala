@@ -1,5 +1,6 @@
 package controllers
 
+import controllers.routes
 import storage.mock.MockSchemaStore
 import play.api.Logger
 import play.api.mvc.{Request, Action}
@@ -73,11 +74,17 @@ object SchemaController extends BaseController {
   }
 
   private def links()(implicit request: Request[Any]) = {
-    Map(DocLink.selfLink, "schemas" -> DocLink(baseUrl + "/schemas/{type}", true))
+    Map(
+      DocLink.selfLink,
+      "schemas" -> DocLink(baseUrl + "/schemas/{type}", true)
+    )
   }
 
   private def links(schema: ResourceSchema)(implicit request: Request[Any]) = {
-    Map("self" -> DocLink(location(schema)))
+    Map(
+      "self" -> DocLink(location(schema)),
+      "instances" -> DocLink(baseUrl + routes.TypedResourceController.getAll(schema.resourceType.id()).url)
+    )
   }
 
   private def location(schema : ResourceSchema)(implicit request: Request[Any]) : String =
@@ -85,6 +92,5 @@ object SchemaController extends BaseController {
 
   private def location(uid: String)(implicit request: Request[Any]) : String =
     baseUrl + routes.SchemaController.get(uid).url
-
 
 }

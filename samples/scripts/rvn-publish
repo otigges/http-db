@@ -82,12 +82,12 @@ def publish_schema (config, schema)
   end
 end
 
-def publish_graph(config, context, graph, content_type)
-  uri   = URI.parse("#{config[:base_uri]}/service/domains/#{config[:domain]}/graphs/contexts/#{context}")
+def publish_generic(config, context, data, content_type)
+  uri   = URI.parse("#{config[:base_uri]}/resources")
   puts "Publishing to URI: #{uri}"
-  response = exec_post_request(uri, config) do |request| 
+  response = exec_post_request(uri, config) do |request|
     request.add_field 'Content-Type', content_type
-    File.open(graph, 'r') do |infile|
+    File.open(data, 'r') do |infile|
       request.body = infile.read
     end
   end
@@ -98,10 +98,8 @@ def publish_file (config, context, file)
   when '.rsf'
   when '.schema'
     publish_schema(config, file)
-  when '.xml'
-    publish_graph(config, context, file, 'application/rdf+xml')
-  when '.n3'
-    publish_graph(config, context, file, 'text/n3')
+  when '.json'
+    publish_generic(config, context, file, 'application/json')
   else
     $stderr.puts "Not a valid file (extension): #{file}"
   end

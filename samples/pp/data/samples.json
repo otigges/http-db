@@ -1,0 +1,24 @@
+[
+    {
+        "id" : "o3",
+        "type" : "Organization",
+        "name" : "O3 Telecomunications"
+    },
+    {
+        "id" : "NedFlanders",
+        "type" : "Person",
+        "firstName" : "Ned",
+        "lastName" : "Flanders",
+        "somethingComplex" : {
+            "x" : 2,
+            "b" : true
+        },
+        "associations": [
+            {
+                "predicate": "worksFor",
+                "resource": "o3"
+            }
+        ]
+    }
+]
+

@@ -1,5 +1,10 @@
 package controllers
 
+import controllers.SchemaController._
+import controllers.TypedResourceController._
+import controllers.TypedResourceController.location
+import controllers.TypedResourceController.schemaStore
+import model.schema.{ResourceSchema, SchemaValidator, ValidationResult}
 import play.api.mvc._
 import model._
 import storage.mock.MockGraphAccess
@@ -23,6 +28,19 @@ object GenericResourceController extends BaseController {
   protected def resourceBaseUrl(implicit request: Request[_]) = baseUrl + "/resources"
 
   //-------------------------------------------------------
+
+  def post() = Action { implicit request =>
+    withJsonBody {
+      case json: JsObject =>
+        val resource: Resource = mapAndStore(json)
+        Created.withHeaders("Location" -> location(resource.qn().id()))
+      case jsArray: JsArray =>
+        val resources = jsArray.value.map(mapAndStore)
+        Accepted(s"Stored schemas: ${resources.map(_.qn())} ")
+      case _ =>
+        BadRequest("Expected single JSON schema or array of JSON schemas.")
+    }.getOrElse(BadRequest("No valid JSON."))
+  }
 
   def getGeneric(uid: String) = Action {
     implicit request =>
@@ -72,5 +90,19 @@ object GenericResourceController extends BaseController {
 
       }.getOrElse(BadRequest("No valid JSON body."))
   }
+
+  // util
+
+  private def location(uid: String)(implicit request: Request[Any]) : String =
+    baseUrl + routes.GenericResourceController.getGeneric(uid).url
+
+  private def mapAndStore(json: JsValue) : Resource = {
+    val resource = GenericResource.fromJson(UID(), json.as[JsObject])
+    val rtype = resource.attributeOption("type").map(_.valueAsString)
+    graphAccess.store(resource)
+    Logger.info(s"Stored resource: ${resource.qn()} of type ${rtype}")
+    resource
+  }
+
 
 }
